@@ -135,7 +135,7 @@ function Content() {
         ))}
       </PanelSection>
 
-      <PanelSection title="XIVLauncher (XLM)">
+      <PanelSection title="XLM Decky">
         <PanelSectionRow>
           <Field
             label={status.xlmInstalled ? "Installed" : "Not installed"}
@@ -156,7 +156,7 @@ function Content() {
             if (status.restartNeeded) {
               return (
                 <PanelSectionRow key={game.appid}>
-                  <Field label="Steam needs a restart to see XLM" />
+                  <Field label="Steam needs a restart to see XLM Decky" />
                   <ButtonItem layout="below" onClick={() => SteamClient.User.StartRestart(false)}>
                     Restart Steam
                   </ButtonItem>
@@ -171,7 +171,7 @@ function Content() {
                   </ButtonItem>
                 ) : (
                   <ButtonItem layout="below" onClick={() => useXlm(game)}>
-                    Use XLM for {game.name}
+                    Use XLM Decky for {game.name}
                   </ButtonItem>
                 )}
               </PanelSectionRow>

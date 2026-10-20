@@ -6,8 +6,11 @@ A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin that 
 
 1. Finds the full game (39210) or the free trial (312060) in the Steam libraries, and offers to
    install one when neither is there.
-2. Installs XLM as a Steam compatibility tool, keeping its `prelaunch.d` and `postlaunch.d` hooks.
-3. Sets XLM as the game's compatibility tool (after a Steam restart, the first time) and launches it.
+2. Installs its own copy of XLM as the "XLM Decky" compatibility tool (`compatibilitytools.d/XLM-Decky`,
+   internal name `xlm-decky`), keeping its `prelaunch.d` and `postlaunch.d` hooks and the
+   XIVLauncher.Core it downloaded across updates. An XLM installed otherwise is left alone.
+3. Sets XLM Decky as the game's compatibility tool (after a Steam restart, the first time) and
+   launches it.
 
 XLM comes from Blooym/xlm's releases on x86_64 (Steam Deck). On aarch64 (Steam on Android through
 [DroidDeck](https://github.com/Droid-Deck/DroidDeck)) it comes from

@@ -12,11 +12,13 @@ GAMES = {
     312060: "FINAL FANTASY XIV Online Free Trial",
 }
 
-# XLM's own name for its compatibility tool (static/compatibilitytool.vdf in Blooym/xlm).
-TOOL_NAME = "xlm"
-TOOL_DIR = "XLM"
-# Steam's name for the tool once this plugin installed it, so it can be told from a manual install.
-DISPLAY_NAME = "XLCore [XLM Decky]"
+# This plugin's own copy of XLM, a compatibility tool of its own beside any XLM installed otherwise
+# ("XLM", "xlm"), which it leaves alone. No space in the folder: XLM's launch script doesn't quote it.
+TOOL_NAME = "xlm-decky"
+TOOL_DIR = "XLM-Decky"
+DISPLAY_NAME = "XLM Decky"
+# What XLM keeps in its folder across reinstalls: launch hooks and the XIVLauncher.Core it downloaded.
+KEPT = ("prelaunch.d", "postlaunch.d", "xlcore")
 
 UPSTREAM = "https://github.com/Blooym/xlm/releases/latest/download"
 # XLM and XIVLauncher.Core have no aarch64 builds upstream yet; this fork publishes them.
@@ -130,12 +132,18 @@ def restart_needed():
     return True
 
 
-def set_display_name(tool_dir):
-    vdf = os.path.join(tool_dir, "compatibilitytool.vdf")
-    with open(vdf, encoding="utf-8") as f:
-        text = f.read()
-    with open(vdf, "w", encoding="utf-8") as f:
-        f.write(re.sub(r'("display_name"\s*)"[^"]*"', rf'\1"{DISPLAY_NAME}"', text))
+def rename_tool(tool_dir):
+    """Give the XLM that install-steam-tool wrote this plugin's tool name."""
+    for name, pattern, repl in (
+        ("compatibilitytool.vdf", r'"xlm"(\s*\{)', rf'"{TOOL_NAME}"\1'),
+        ("compatibilitytool.vdf", r'("display_name"\s*)"[^"]*"', rf'\1"{DISPLAY_NAME}"'),
+        ("toolmanifest.vdf", r'("compatmanager_layer_name"\s*)"[^"]*"', rf'\1"{TOOL_NAME}"'),
+    ):
+        path = os.path.join(tool_dir, name)
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(re.sub(pattern, repl, text, count=1))
 
 
 def subprocess_env():
@@ -194,21 +202,22 @@ class Plugin:
             await run("curl", "--fail", "--silent", "--show-error", "--location", "--max-time", "300", "-o", xlm, url)
             os.chmod(xlm, 0o755)
 
-            # Keep the user's XLM pre- and post-launch scripts across reinstalls.
+            # install-steam-tool always writes an "XLM" folder: build it aside, then move it into place.
+            staging = os.path.join(tmp, "compatibilitytools.d")
+            os.makedirs(staging)
+            await run(xlm, "install-steam-tool", "--xlm-updater-disable",
+                      f"--extra-launch-args={launch_args}", "--steam-compat-path", staging + "/")
+            built = os.path.join(staging, "XLM")
+            rename_tool(built)
+
             current = os.path.join(compat, TOOL_DIR)
             fresh = not os.path.isfile(os.path.join(current, "compatibilitytool.vdf"))
-            hooks = os.path.join(tmp, "hooks")
-            os.makedirs(hooks)
-            for name in ("prelaunch.d", "postlaunch.d"):
+            for name in KEPT:
                 if os.path.isdir(os.path.join(current, name)):
-                    shutil.copytree(os.path.join(current, name), os.path.join(hooks, name), symlinks=True)
+                    shutil.move(os.path.join(current, name), os.path.join(built, name))
             shutil.rmtree(current, ignore_errors=True)
             os.makedirs(compat, exist_ok=True)
-
-            await run(xlm, "install-steam-tool", "--xlm-updater-disable",
-                      f"--extra-launch-args={launch_args}", "--steam-compat-path", compat + "/")
-            shutil.copytree(hooks, current, symlinks=True, dirs_exist_ok=True)
-            set_display_name(current)
+            shutil.move(built, current)
 
         if fresh:
             os.makedirs(decky.DECKY_PLUGIN_SETTINGS_DIR, exist_ok=True)

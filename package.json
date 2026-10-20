@@ -1,6 +1,6 @@
 {
   "name": "decky-xlm",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Sets up XIVLauncher (XLM) for FINAL FANTASY XIV on Steam Deck and DroidDeck",
   "type": "module",
   "scripts": {
