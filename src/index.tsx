@@ -21,6 +21,7 @@ interface Status {
   source: string;
   steamRoot: string | null;
   xlmInstalled: boolean;
+  restartNeeded: boolean;
   toolName: string;
   games: Game[];
 }
@@ -36,28 +37,21 @@ function installGame(appid: number) {
   (SteamClient.URL as unknown as { ExecuteSteamURL(url: string): void }).ExecuteSteamURL(`steam://install/${appid}`);
 }
 
-// Steam lists a new compatibility tool only after a restart.
-async function steamKnowsTool(appid: number, tool: string): Promise<boolean> {
-  const tools = await SteamClient.Apps.GetAvailableCompatTools(appid);
-  return tools.some((t) => t.strToolName === tool);
+// The tool Steam uses for the app right now; config.vdf only has it once Steam saved it.
+function currentTool(game: Game): string | null {
+  const details = window.appDetailsStore?.GetAppDetails(game.appid);
+  return details?.strCompatToolName || game.compatTool;
 }
 
 function Content() {
   const [status, setStatus] = useState<Status | null>(null);
-  const [toolListed, setToolListed] = useState<Record<number, boolean>>({});
   const [chosen, setChosen] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
     try {
-      const next = await getStatus();
-      setStatus(next);
-      const listed: Record<number, boolean> = {};
-      for (const game of next.games.filter((g) => g.state === "installed")) {
-        listed[game.appid] = await steamKnowsTool(game.appid, next.toolName);
-      }
-      setToolListed(listed);
+      setStatus(await getStatus());
     } catch (e) {
       setError(String(e));
     }
@@ -158,8 +152,8 @@ function Content() {
       {status.xlmInstalled && installed.length > 0 && (
         <PanelSection title="Launch">
           {installed.map((game) => {
-            const tool = chosen[game.appid] ?? game.compatTool;
-            if (!toolListed[game.appid]) {
+            const tool = chosen[game.appid] ?? currentTool(game);
+            if (status.restartNeeded) {
               return (
                 <PanelSectionRow key={game.appid}>
                   <Field label="Steam needs a restart to see XLM" />

@@ -15,6 +15,8 @@ GAMES = {
 # XLM's own name for its compatibility tool (static/compatibilitytool.vdf in Blooym/xlm).
 TOOL_NAME = "xlm"
 TOOL_DIR = "XLM"
+# Steam's name for the tool once this plugin installed it, so it can be told from a manual install.
+DISPLAY_NAME = "XLCore [XLM Decky]"
 
 UPSTREAM = "https://github.com/Blooym/xlm/releases/latest/download"
 # XLM and XIVLauncher.Core have no aarch64 builds upstream yet; this fork publishes them.
@@ -89,6 +91,53 @@ def compat_tool(root, appid):
     return entry.group(1) if entry else None
 
 
+def steam_started_at():
+    """When the Steam client process started (seconds since the epoch), or None."""
+    try:
+        with open("/proc/stat") as stat:
+            boot = next(int(line.split()[1]) for line in stat if line.startswith("btime "))
+        tick = os.sysconf("SC_CLK_TCK")
+        starts = []
+        for pid in filter(str.isdigit, os.listdir("/proc")):
+            try:
+                with open(f"/proc/{pid}/comm") as comm:
+                    if comm.read().strip() != "steam":
+                        continue
+                with open(f"/proc/{pid}/stat") as stat:
+                    fields = stat.read().rsplit(")", 1)[1].split()
+                starts.append(boot + int(fields[19]) / tick)
+            except (OSError, IndexError, ValueError):
+                continue
+        return min(starts) if starts else None
+    except (OSError, StopIteration, ValueError):
+        return None
+
+
+def fresh_install_marker():
+    return os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "fresh-install")
+
+
+def restart_needed():
+    """Steam lists a compatibility tool installed while it runs only after a restart."""
+    try:
+        installed_at = os.path.getmtime(fresh_install_marker())
+    except OSError:
+        return False
+    started = steam_started_at()
+    if started is not None and started > installed_at:
+        os.remove(fresh_install_marker())
+        return False
+    return True
+
+
+def set_display_name(tool_dir):
+    vdf = os.path.join(tool_dir, "compatibilitytool.vdf")
+    with open(vdf, encoding="utf-8") as f:
+        text = f.read()
+    with open(vdf, "w", encoding="utf-8") as f:
+        f.write(re.sub(r'("display_name"\s*)"[^"]*"', rf'\1"{DISPLAY_NAME}"', text))
+
+
 def subprocess_env():
     # Decky's bundled Python sets LD_LIBRARY_PATH for itself, which breaks system programs.
     env = dict(os.environ)
@@ -119,6 +168,7 @@ class Plugin:
             "source": source()[0],
             "steamRoot": root,
             "xlmInstalled": installed,
+            "restartNeeded": installed and restart_needed(),
             "toolName": TOOL_NAME,
             "games": [
                 {
@@ -146,6 +196,7 @@ class Plugin:
 
             # Keep the user's XLM pre- and post-launch scripts across reinstalls.
             current = os.path.join(compat, TOOL_DIR)
+            fresh = not os.path.isfile(os.path.join(current, "compatibilitytool.vdf"))
             hooks = os.path.join(tmp, "hooks")
             os.makedirs(hooks)
             for name in ("prelaunch.d", "postlaunch.d"):
@@ -157,6 +208,11 @@ class Plugin:
             await run(xlm, "install-steam-tool", "--xlm-updater-disable",
                       f"--extra-launch-args={launch_args}", "--steam-compat-path", compat + "/")
             shutil.copytree(hooks, current, symlinks=True, dirs_exist_ok=True)
+            set_display_name(current)
+
+        if fresh:
+            os.makedirs(decky.DECKY_PLUGIN_SETTINGS_DIR, exist_ok=True)
+            open(fresh_install_marker(), "w").close()
 
         decky.logger.info("XLM installed")
         return await self.status()
