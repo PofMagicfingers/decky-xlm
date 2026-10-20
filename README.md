@@ -24,6 +24,6 @@ npm install
 npm run build
 ```
 
-The plugin is the folder with `plugin.json`, `package.json`, `main.py`, `dist/index.js`, `LICENSE`
+The plugin is the folder with `plugin.json`, `package.json`, `main.py`, `dist/index.js`, `LICENSE`, `THIRD_PARTY.md`
 and this README. Zipped as `XLM Setup/…`, it installs from Decky's developer settings ("Install
 plugin from ZIP file").
