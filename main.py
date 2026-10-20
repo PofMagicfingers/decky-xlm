@@ -60,16 +60,26 @@ def libraries(root):
 
 
 def game_state(root, appid):
-    """'installed', 'installing' or None, from the app manifest in any library."""
+    """'installed', 'installing' or None, from the app manifests in the libraries."""
+    states = set()
     for library in libraries(root):
         manifest = os.path.join(library, "steamapps", f"appmanifest_{appid}.acf")
         try:
             with open(manifest, encoding="utf-8") as acf:
-                flags = re.search(r'"StateFlags"\s*"(\d+)"', acf.read())
+                found = re.search(r'"StateFlags"\s*"(\d+)"', acf.read())
         except OSError:
             continue
-        # StateFlags 4 is "fully installed"; other values are downloads, updates or validations in progress.
-        return "installed" if flags and int(flags.group(1)) == 4 else "installing"
+        flags = int(found.group(1)) if found else 0
+        # Steam's StateFlags: 4 is fully installed (set along with an update to come); 1 (uninstalled)
+        # or nothing is a manifest Steam keeps for an app that is not there, as when a download was
+        # cancelled or the other edition of the game was chosen; the rest is a download in progress.
+        if flags & 4:
+            states.add("installed")
+        elif flags not in (0, 1):
+            states.add("installing")
+    for state in ("installed", "installing"):
+        if state in states:
+            return state
     return None
 
 
