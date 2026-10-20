@@ -37,15 +37,19 @@ function installGame(appid: number) {
   (SteamClient.URL as unknown as { ExecuteSteamURL(url: string): void }).ExecuteSteamURL(`steam://install/${appid}`);
 }
 
-// The tool Steam uses for the app right now; config.vdf only has it once Steam saved it.
-function currentTool(game: Game): string | null {
+// The tool Steam uses for the app right now, from its app details; config.vdf only has it once
+// Steam saved it, so it is a fallback for an app whose details Steam hasn't loaded.
+function currentTool(game: Game): { name: string | null; label: string } {
   const details = window.appDetailsStore?.GetAppDetails(game.appid);
-  return details?.strCompatToolName || game.compatTool;
+  if (details) {
+    const name = details.strCompatToolName || null;
+    return { name, label: details.strCompatToolDisplayName || name || "Steam's default" };
+  }
+  return { name: game.compatTool, label: game.compatTool ? `${game.compatTool} (saved setting)` : "unknown" };
 }
 
 function Content() {
   const [status, setStatus] = useState<Status | null>(null);
-  const [chosen, setChosen] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,7 +104,8 @@ function Content() {
 
   const useXlm = (game: Game) => {
     SteamClient.Apps.SpecifyCompatTool(game.appid, status.toolName);
-    setChosen({ ...chosen, [game.appid]: status.toolName });
+    // What Steam really uses shows on the next refresh, read back from its app details.
+    setTimeout(refresh, 500);
   };
 
   return (
@@ -160,16 +165,17 @@ function Content() {
       {status.xlmInstalled && !status.restartNeeded && installed.length > 0 && (
         <PanelSection title="Launch">
           {installed.map((game) => {
-            const tool = chosen[game.appid] ?? currentTool(game);
+            const current = currentTool(game);
             return (
               <PanelSectionRow key={game.appid}>
-                {tool === status.toolName ? (
+                <Field label={game.name} description={`Compatibility tool: ${current.label}`} />
+                {current.name === status.toolName ? (
                   <ButtonItem layout="below" onClick={() => SteamClient.Apps.RunGame(String(game.appid), "", -1, 100)}>
-                    Play {game.name}
+                    Play
                   </ButtonItem>
                 ) : (
                   <ButtonItem layout="below" onClick={() => useXlm(game)}>
-                    Use XLM Decky for {game.name}
+                    Use XLM Decky
                   </ButtonItem>
                 )}
               </PanelSectionRow>
