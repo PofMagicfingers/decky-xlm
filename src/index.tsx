@@ -147,22 +147,20 @@ function Content() {
             {busy ? "Installing…" : status.xlmInstalled ? "Update XLM" : "Install XLM"}
           </ButtonItem>
         </PanelSectionRow>
+        {status.restartNeeded && (
+          <PanelSectionRow>
+            <Field label="Steam needs a restart to see XLM Decky" />
+            <ButtonItem layout="below" onClick={() => SteamClient.User.StartRestart(false)}>
+              Restart Steam
+            </ButtonItem>
+          </PanelSectionRow>
+        )}
       </PanelSection>
 
-      {status.xlmInstalled && installed.length > 0 && (
+      {status.xlmInstalled && !status.restartNeeded && installed.length > 0 && (
         <PanelSection title="Launch">
           {installed.map((game) => {
             const tool = chosen[game.appid] ?? currentTool(game);
-            if (status.restartNeeded) {
-              return (
-                <PanelSectionRow key={game.appid}>
-                  <Field label="Steam needs a restart to see XLM Decky" />
-                  <ButtonItem layout="below" onClick={() => SteamClient.User.StartRestart(false)}>
-                    Restart Steam
-                  </ButtonItem>
-                </PanelSectionRow>
-              );
-            }
             return (
               <PanelSectionRow key={game.appid}>
                 {tool === status.toolName ? (

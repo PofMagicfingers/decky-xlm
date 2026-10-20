@@ -20,6 +20,27 @@ which build XLM and XIVLauncher.Core for ARM64 until upstream does.
 This plugin was written with an AI assistant (Claude). It is not affiliated with goatcorp, Blooym
 or Square Enix.
 
+## Install and play
+
+1. Install [Decky Loader](https://decky.xyz) (from desktop mode on a Steam Deck; DroidDeck has it
+   built in).
+2. In Decky's settings, turn on **Developer mode**. In the **Developer** tab, choose **Install
+   plugin from URL** and enter
+   `https://github.com/PofMagicfingers/decky-xlm/releases/latest/download/xlm-setup.zip`.
+3. Open **XLM Setup** from the Quick Access menu (the **…** button).
+4. If FINAL FANTASY XIV isn't installed, choose **Install the free trial** or **I own the full
+   game**, and let Steam download it.
+5. Choose **Install XLM**, then **Restart Steam** the first time.
+6. Choose **Use XLM Decky for FINAL FANTASY XIV**, then **Play**. XIVLauncher opens: log in with
+   your Square Enix account.
+
+### Free trial or full game
+
+Either Steam entry works. Steam only provides the game files and starts XLM; XIVLauncher then logs
+in to your Square Enix account and starts the game, so what you can play is set by that account,
+not by the Steam entry. On a free trial account, tick XIVLauncher's free trial option. The free
+trial entry is the one to install when you don't own the game on Steam.
+
 ## Build
 
 ```sh
