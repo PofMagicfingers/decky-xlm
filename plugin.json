@@ -1,0 +1,14 @@
+{
+  "name": "XLM Setup",
+  "author": "PofMagicfingers",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "ffxiv",
+      "launcher"
+    ],
+    "description": "Installs XIVLauncher (XLM) for FINAL FANTASY XIV and sets it as the game's compatibility tool.",
+    "image": "https://opengraph.githubassets.com/1/PofMagicfingers/decky-xlm"
+  }
+}
