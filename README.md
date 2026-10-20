@@ -30,9 +30,12 @@ or Square Enix.
 3. Open **XLM Setup** from the Quick Access menu (the **…** button).
 4. If FINAL FANTASY XIV isn't installed, choose **Install the free trial** or **I own the full
    game**, and let Steam download it.
-5. Choose **Install XLM**, then **Restart Steam** the first time.
-6. Choose **Use XLM Decky for FINAL FANTASY XIV**, then **Play**. XIVLauncher opens: log in with
-   your Square Enix account.
+5. Choose **Install XLM**, then **Restart Steam** the first time: Steam only lists a new
+   compatibility tool after a restart.
+6. Once Steam is back, open **XLM Setup** again: it doesn't pick up where it left off by itself.
+   Choose **Use XLM Decky for FINAL FANTASY XIV**. You can also select it by hand: on the game's
+   page, **Properties › Compatibility**, force **XLM Decky**.
+7. Choose **Play**. XIVLauncher opens: log in with your Square Enix account.
 
 ### Free trial or full game
 
